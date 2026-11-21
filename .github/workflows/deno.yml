@@ -1,7 +1,6 @@
-
 name: Render Axiom Academy Film
 
-"on":
+on:
   workflow_dispatch:
   push:
     branches:
@@ -14,7 +13,7 @@ jobs:
   render-mp4:
     name: Render Axiom Academy Video
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -25,31 +24,33 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Verify project files
+      - name: Inspect repository
         run: |
           pwd
           ls -la
-          test -f package.json
-          test -f package-lock.json
-          test -f src/remotion-index.ts
+          find src -maxdepth 4 -type f | sort
 
       - name: Install dependencies
         run: npm ci
 
-      - name: List Remotion compositions
-        run: npx remotion compositions src/remotion-index.ts
-
       - name: Ensure Remotion browser
         run: npx remotion browser ensure
 
+      - name: List Remotion compositions
+        run: npx remotion compositions src/remotion.ts
+
       - name: Render animation
-        run: npx remotion render src/remotion-index.ts AxiomAd axiom-second-chance.mp4 --codec=h264
+        run: npx remotion render src/remotion.ts AxiomAd axiom-second-chance.mp4 --codec=h264 --concurrency=2
+
+      - name: Verify rendered video
+        run: |
+          test -s axiom-second-chance.mp4
+          ls -lh axiom-second-chance.mp4
 
       - name: Upload MP4
         uses: actions/upload-artifact@v5
         with:
           name: axiom-second-chance-mp4
-          path: axiom-second-chance.mp4
+          path: axiom-second-challenge.mp4
           if-no-files-found: error
           retention-days: 7
-
